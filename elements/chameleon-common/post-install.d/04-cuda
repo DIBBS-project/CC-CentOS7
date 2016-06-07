@@ -1,0 +1,75 @@
+#!/bin/bash
+
+if [ ${DIB_DEBUG_TRACE:-0} -gt 0 ]; then
+    set -x
+fi
+set -eu
+set -o pipefail
+
+
+#############################################################
+# 0- Pre-Installation
+#############################################################
+
+# # Ensure that /tmp will be big enough to install CUDA.
+# $(df -h | grep -qo /tmp)
+# if [ $? == "1" ]; then
+#     sudo umount /tmp
+# fi
+# sudo mount -t tmpfs -o size=40485760000,mode=1777 overflow /tmp
+
+
+#############################################################
+# I- Installation (runfile)
+#############################################################
+
+# Install wget
+sudo yum install -y wget
+
+# Install kernel headers
+sudo yum install -y kernel-devel-$(uname -r) kernel-headers-$(uname -r)
+
+# Get the NVIDIA Cuda Toolkit for Centos
+wget http://developer.download.nvidia.com/compute/cuda/7.5/Prod/local_installers/cuda_7.5.18_linux.run
+
+# Install the NVIDIA Cuda Toolkit for Centos
+#sudo sh cuda_7.5.18_linux.run
+sudo sh cuda_7.5.18_linux.run --samples --toolkit --driver --silent --verbose
+
+# # Disabling Nouveau
+# lsmod | grep nouveau
+
+# blacklist nouveau
+# options nouveau modeset=0
+
+# sudo dracut --force
+
+# Check device files permission
+
+
+#############################################################
+# III- Post-Installation
+#############################################################
+
+# Mandatory Actions
+echo 'export PATH=/usr/local/cuda-7.0/bin:$PATH' > /etc/environment
+echo 'export LD_LIBRARY_PATH=/usr/local/cuda-7.0/lib64:$LD_LIBRARY_PATH' > /etc/environment
+
+# Generate startup script that load information from nvdia device query
+cat > /etc/init.d/load_nvidia_info <<- EOM
+#!/bin/bash
+DEVICE_QUERY_PATH="/root/NVIDIA_CUDA-7.5_Samples/1_Utilities/deviceQuery"
+OUTPUT_FILE_PATH="/opt/nvidia.txt"
+
+pushd $DEVICE_QUERY_PATH
+./deviceQuery > $OUTPUT_FILE_PATH
+chmod 777 $OUTPUT_FILE_PATH
+popd
+
+EOM
+
+# Add startup script that load information from nvdia device query
+chmod ugo+x /etc/init.d/load_nvidia_info
+update-rc.d load_nvidia_info defaults
+
+
