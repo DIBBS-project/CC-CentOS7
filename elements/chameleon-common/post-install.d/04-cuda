@@ -55,21 +55,36 @@ sudo sh cuda_7.5.18_linux.run --samples --toolkit --driver --silent --verbose
 echo 'export PATH=/usr/local/cuda-7.0/bin:$PATH' > /etc/environment
 echo 'export LD_LIBRARY_PATH=/usr/local/cuda-7.0/lib64:$LD_LIBRARY_PATH' > /etc/environment
 
+# Compile example
+DEVICE_QUERY_PATH="/usr/local/cuda-7.5/samples/1_Utilities/deviceQuery"
+source /etc/environment
+pushd $DEVICE_QUERY_PATH
+sudo make
+popd
+
 # Generate startup script that load information from nvdia device query
-cat > /etc/init.d/load_nvidia_info <<- EOM
+cat > /etc/load_nvidia_info <<- EOM
 #!/bin/bash
-DEVICE_QUERY_PATH="/root/NVIDIA_CUDA-7.5_Samples/1_Utilities/deviceQuery"
+DEVICE_QUERY_PATH="$DEVICE_QUERY_PATH"
 OUTPUT_FILE_PATH="/opt/nvidia.txt"
 
-pushd $DEVICE_QUERY_PATH
-./deviceQuery > $OUTPUT_FILE_PATH
-chmod 777 $OUTPUT_FILE_PATH
+pushd \$DEVICE_QUERY_PATH
+./deviceQuery > \$OUTPUT_FILE_PATH
+chmod 777 \$OUTPUT_FILE_PATH
 popd
 
 EOM
 
 # Add startup script that load information from nvdia device query
-chmod ugo+x /etc/init.d/load_nvidia_info
-update-rc.d load_nvidia_info defaults
+chmod ugo+x /etc/load_nvidia_info
+echo "bash /etc/load_nvidia_info" >> /etc/rc.local
 
+# Ensure that /etc/rc.local is executable
+sudo chmod +x /etc/rc.local
+
+#############################################################
+# IV- Cleaning
+#############################################################
+
+exit 0
 

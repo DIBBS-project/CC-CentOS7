@@ -6,10 +6,20 @@ fi
 set -eu
 set -o pipefail
 
-yum install -y rubygem-g5k-checks
+# Install from sources
+git clone https://github.com/ChameleonCloud/g5k-checks.git
+pushd g5k-checks
+gem build g5k-checks.gemspec
+sudo yum install -y ruby-devel
+yes | sudo gem install g5k-checks-0.5.1.gem || true
+popd
 
-ln -s /usr/bin/g5k-checks /usr/bin/cc-checks
+ls -lh /usr/local/bin/
 
+ln -s /usr/local/bin/g5k-checks /usr/bin/cc-checks
+
+
+# Generate configuration file
 cat > /etc/g5k-checks.conf <<'EOF'
 # This is a yaml file for G5kchecks configuration
 ---
