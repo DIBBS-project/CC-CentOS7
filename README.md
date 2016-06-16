@@ -23,6 +23,7 @@ pip install diskimage-builder
 The main script takes an output path as a unique (facultative) input parameter:
 ```
 ./create-image.sh <output_file>
+```
 
 and can be used as in the following example:
 
