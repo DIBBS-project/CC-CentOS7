@@ -3,7 +3,8 @@
 if [ ${DIB_DEBUG_TRACE:-0} -gt 0 ]; then
     set -x
 fi
-set -eu
+set -x
+#set -eu
 set -o pipefail
 
 
@@ -11,13 +12,18 @@ set -o pipefail
 # 0- Pre-Installation
 #############################################################
 
-# # Ensure that /tmp will be big enough to install CUDA.
-# $(df -h | grep -qo /tmp)
-# if [ $? == "1" ]; then
-#     sudo umount /tmp
-# fi
-# sudo mount -t tmpfs -o size=40485760000,mode=1777 overflow /tmp
+# NVIDIA_TMP_FOLDER=/tmp/yum
+mkdir -p /root/tmp
+NVIDIA_TMP_FOLDER=/root/tmp
 
+yum install -y mesa-libGLES.x86_64
+yum install -y mesa-libGL-devel.x86_64
+yum install -y mesa-libGLU-devel.x86_64
+yum install -y mesa-libGLw.x86_64
+yum install -y mesa-libGLw-devel.x86_64
+yum install -y libXi-devel.x86_64
+yum install -y freeglut-devel.x86_64
+yum install -y freeglut.x86_64
 
 #############################################################
 # I- Installation (runfile)
@@ -33,19 +39,8 @@ sudo yum install -y kernel-devel-$(uname -r) kernel-headers-$(uname -r)
 wget http://developer.download.nvidia.com/compute/cuda/7.5/Prod/local_installers/cuda_7.5.18_linux.run
 
 # Install the NVIDIA Cuda Toolkit for Centos
-#sudo sh cuda_7.5.18_linux.run
-sudo sh cuda_7.5.18_linux.run --samples --toolkit --driver --silent --verbose
-
-# # Disabling Nouveau
-# lsmod | grep nouveau
-
-# blacklist nouveau
-# options nouveau modeset=0
-
-# sudo dracut --force
-
-# Check device files permission
-
+export TMPDIR=$NVIDIA_TMP_FOLDER
+sudo sh cuda_7.5.18_linux.run --samples --toolkit --driver --silent --verbose -tmpdir $NVIDIA_TMP_FOLDER
 
 #############################################################
 # III- Post-Installation
