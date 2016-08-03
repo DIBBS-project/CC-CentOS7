@@ -57,7 +57,8 @@ pushd $DEVICE_QUERY_PATH
 sudo make
 popd
 
-# Generate startup script that load information from nvdia device query
+# Generate startup  script that load  information from nvdia device  query. This
+# forces to have NVDIA devices ready when booting a GPU node.
 cat > /etc/load_nvidia_info <<- EOM
 #!/bin/bash
 DEVICE_QUERY_PATH="$DEVICE_QUERY_PATH"
@@ -80,6 +81,12 @@ sudo chmod +x /etc/rc.local
 #############################################################
 # IV- Cleaning
 #############################################################
+
+# Clean the tmp folder used by CUDA
+rm -rf /root/tmp
+
+# Remove the CUDA Installer
+rm -f cuda_7.5.18_linux.run
 
 exit 0
 
