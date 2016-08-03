@@ -1,4 +1,4 @@
-# CC-Centos7
+# CC-CentOS7
 
 This directory contains the scripts used to generate the Chameleon KVM and
 bare-metal CentOS 7 images. It relies on diskimage-builder.
@@ -20,7 +20,8 @@ pip install diskimage-builder
 ```
 ## Usage
 
-The main script takes an output path as a unique (facultative) input parameter:
+The main script takes an output path as a unique (optional) input parameter:
+
 ```
 ./create-image.sh <output_file>
 ```
