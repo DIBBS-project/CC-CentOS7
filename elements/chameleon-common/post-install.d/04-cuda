@@ -16,6 +16,7 @@ set -o pipefail
 mkdir -p /root/tmp
 NVIDIA_TMP_FOLDER=/root/tmp
 
+# Install libraries that are required by CUDA to be fully installed
 yum install -y mesa-libGLES.x86_64
 yum install -y mesa-libGL-devel.x86_64
 yum install -y mesa-libGLU-devel.x86_64
@@ -50,7 +51,7 @@ sudo sh cuda_7.5.18_linux.run --samples --toolkit --driver --silent --verbose -t
 echo 'export PATH=/usr/local/cuda-7.0/bin:$PATH' > /etc/environment
 echo 'export LD_LIBRARY_PATH=/usr/local/cuda-7.0/lib64:$LD_LIBRARY_PATH' > /etc/environment
 
-# Compile example
+# Compile deviceQuery sample (useful for testing)
 DEVICE_QUERY_PATH="/usr/local/cuda-7.5/samples/1_Utilities/deviceQuery"
 source /etc/environment
 pushd $DEVICE_QUERY_PATH
