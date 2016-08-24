@@ -1,0 +1,96 @@
+#!/bin/bash
+
+set -x
+
+HADOOP_ARCHIVE_URL="https://www.apache.org/dist/hadoop/core/hadoop-2.7.1/hadoop-2.7.1.tar.gz"
+
+function prepare_node() {
+    # Install java
+    sudo yum install -y java screen
+
+    # Configure nodename
+    sudo su -c 'echo "HOSTNAME={{ node_name }}" >> /etc/sysconfig/network'
+
+    # Add new ssh keys
+    mkdir hadoop_ssh
+    echo "{{ private_key }}" > hadoop_ssh/id_rsa
+    echo "{{ public_key }}" > hadoop_ssh/id_rsa.pub
+    chmod 600 hadoop_ssh/id_rsa
+    sudo cp -r hadoop_ssh/* /root/.ssh
+
+    # Add public key to authorized keys
+    cd
+    cp hadoop_ssh/* .ssh/
+    touch .ssh/authorized_keys
+    cat {{ public_key }} >> .ssh/authorized_keys
+    sudo cp .ssh/authorized_keys /root/.ssh/authorized_keys
+
+    # Remove Host checking from ssh
+    sudo cp /etc/ssh/ssh_config ssh_config
+    sudo chmod 777 ssh_config
+    cat >> ssh_config <<- EOM
+Host *
+    StrictHostKeyChecking no
+EOM
+    sudo cp ssh_config /etc/ssh/ssh_config
+
+}
+
+function install_hadoop() {
+
+    # Configure an hadoop folder
+    sudo mkdir -p /usr/hadoop
+    sudo chown cc /usr/hadoop
+
+    # Download Hadoop
+    pushd /usr/hadoop
+    curl -O $HADOOP_ARCHIVE_URL
+    tar xzf hadoop-2.7.1.tar.gz
+    mv hadoop-2.7.1 hadoop
+    popd
+
+    # Configure hadoop node
+    touch hadoop/etc/hadoop/slaves
+    touch hadoop/etc/hadoop/masters
+
+    # Prepare environment variables
+    cat >> .bashrc <<- EOM
+
+export HADOOP_HOME=/usr/hadoop/hadoop
+export HADOOP_INSTALL=$HADOOP_HOME
+export HADOOP_MAPRED_HOME=$HADOOP_HOME
+export HADOOP_COMMON_HOME=$HADOOP_HOME
+export HADOOP_HDFS_HOME=$HADOOP_HOME
+export YARN_HOME=$HADOOP_HOME
+export HADOOP_COMMON_LIB_NATIVE_DIR=$HADOOP_HOME/lib/native
+export PATH=$PATH:$HADOOP_HOME/sbin:$HADOOP_HOME/bin
+export JAVA_HOME=/usr/lib/jvm/jre-1.8.0-openjdk/
+EOM
+
+    source .bashrc
+    sudo cp .bashrc /etc/environment
+
+    # Create a script that starts Hadoop services
+    cd /usr/hadoop/
+    cat > start_hadoop.sh <<- EOM
+#!/bin/bash
+source /etc/environment
+
+bash $HADOOP_HOME/sbin/hadoop-daemon.sh start datanode
+
+EOM
+
+    # Create a script that reload Hadoop services
+    cat > reload.sh <<- EOM
+#!/bin/bash
+
+ps aux | grep java | grep -v grep | awk '{print $2}' | xargs sudo kill -9
+sudo rm -rf hadoop/logs/
+sudo bash start_hadoop.sh
+EOM
+}
+
+prepare_node
+install_hadoop
+
+exit 0
